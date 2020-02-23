@@ -71,20 +71,39 @@ impl Game {
     }
 }
 
-fn main() {
-    println!("Hello, world!");
+fn seed() -> Vec<i32> {
+    vec![3; 3]
 }
 
-#[cfg(test)]
-mod tests {
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
-    use super::*;
+fn main() {
+    use rand::distributions::{Distribution, Uniform};
 
-    #[test]
-    fn test_play() {
-        let board = Game::new(18);
-        let mut player0 = board.add_player();
-        let mut player1 = board.add_player();
-        board.play(&mut vec![&mut player0, &mut player1]);
+    let draw = Uniform::from(1..3);
+    let mut rng = rand::thread_rng();
+
+    let initial_number_of_matches = 18;
+    let number_of_player = 2;
+    let state = vec![seed(); initial_number_of_matches];
+
+    loop {
+        let current_number_of_matches = initial_number_of_matches;
+        let players_state = vec![Vec::<i32>::new(); number_of_player];
+
+        let current_player_id = 0;
+        while current_number_of_matches > 0 {
+            let current_player = &players_state[current_player_id];
+            let draw = {
+                loop {
+                    let draw = draw.sample(&mut rng);
+                    if draw <= current_number_of_matches {
+                        break draw;
+                    }
+                }
+            };
+            current_player_id
+        }
+
+        println!("Player {} won!", current_player_id);
+        break;
     }
 }
