@@ -1,5 +1,3 @@
-// use rand::prelude::*;
-
 struct Player {
     state: Vec<Vec<i32>>,
 }
@@ -7,17 +5,29 @@ struct Player {
 impl Player {
     pub fn new(total_number_of_matches: i32) -> Player {
         Player {
-            state: Vec::with_capacity(total_number_of_matches as usize),
+            state: vec![Vec::new(); total_number_of_matches as usize],
         }
     }
     pub fn draw(&mut self, current_number_of_matches: i32) -> i32 {
-        1
+        use rand::distributions::{Distribution, Uniform};
+
+        let between = Uniform::from(1..3);
+        let mut rng = rand::thread_rng();
+
+        let state = &mut self.state[(current_number_of_matches - 1) as usize];
+        if state.is_empty() {
+            Self::seed(state);
+        }
+
+        return between.sample(&mut rng);
     }
     pub fn invalid_draw(&mut self) {}
-    fn seed(&mut self) {}
+    pub fn loose(&mut self) {}
+    pub fn win(&mut self) {}
+    fn seed(state: &mut Vec<i32>) {
+        *state = vec![3, 3, 3];
+    }
     fn limit(&mut self) {}
-    fn loose(&mut self) {}
-    fn win(&mut self) {}
 }
 
 struct Game {
@@ -33,23 +43,22 @@ impl Game {
     fn add_player(&self) -> Player {
         Player::new(self.total_number_of_matches)
     }
-    fn draw<'a>(&self, players: &'a mut Vec<&'a mut Player>) -> &'a Player {
+    fn play<'a>(&self, players: &'a mut Vec<&'a mut Player>) -> &'a Player {
         let mut current_number_of_matches = self.total_number_of_matches;
         let mut player_id = 0;
-        let current_player = while current_number_of_matches > 0 {
-            let current_player = players[player_id];
-            while let Some(matches_played) = match current_player.draw(current_number_of_matches) {
-                matches_played if matches_played >= current_number_of_matches => {
-                    Some(matches_played)
-                }
-                _ => {
+        while current_number_of_matches > 0 {
+            let current_player = &mut players[player_id];
+            let mut matches_played;
+            while current_number_of_matches > 0 {
+                matches_played = current_player.draw(current_number_of_matches);
+                if matches_played <= current_number_of_matches {
+                    current_number_of_matches -= matches_played;
+                } else {
                     current_player.invalid_draw();
-                    None
                 }
-            } {}
+            }
             player_id = (player_id + 1) % players.len();
-            current_player
-        };
+        }
         for (id, player) in players.iter_mut().enumerate() {
             if player_id != id {
                 player.loose();
@@ -76,6 +85,6 @@ mod tests {
         let board = Game::new(18);
         let mut player0 = board.add_player();
         let mut player1 = board.add_player();
-        board.draw(&mut vec![&mut player0, &mut player1]);
+        board.play(&mut vec![&mut player0, &mut player1]);
     }
 }
